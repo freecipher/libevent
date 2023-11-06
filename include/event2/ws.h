@@ -1,6 +1,10 @@
 #ifndef EVENT2_WS_H_INCLUDED_
 #define EVENT2_WS_H_INCLUDED_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct evws_connection;
 
 #define WS_CR_NONE 0
@@ -30,10 +34,14 @@ EVENT2_EXPORT_SYMBOL
 struct evws_connection *evws_new_session(
 	struct evhttp_request *req, ws_on_msg_cb, void *arg, int options);
 
-/** Sends data over WebSocket connection */
+/** Sends text data over WebSocket connection */
 EVENT2_EXPORT_SYMBOL
-void evws_send(
-	struct evws_connection *evws, const char *packet_str, size_t str_len);
+void evws_send_text(struct evws_connection *evws, const char *packet_str);
+
+/** Sends binary data over WebSocket connection */
+EVENT2_EXPORT_SYMBOL
+void evws_send_binary(
+	struct evws_connection *evws, const char *packet_data, size_t packet_len);
 
 /** Closes a WebSocket connection with reason code */
 EVENT2_EXPORT_SYMBOL
@@ -54,5 +62,9 @@ void evws_connection_free(struct evws_connection *evws);
 EVENT2_EXPORT_SYMBOL
 struct bufferevent *evws_connection_get_bufferevent(
 	struct evws_connection *evws);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

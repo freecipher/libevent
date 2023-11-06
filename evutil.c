@@ -24,6 +24,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef _WIN32
+#ifndef _WIN32_WINNT
+/* For structs needed by GetAdaptersAddresses and AI_NUMERICSERV */
+#define _WIN32_WINNT 0x0600
+#endif
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "event2/event-config.h"
 #include "evconfig-private.h"
 
@@ -34,15 +42,10 @@
 #ifdef EVENT__HAVE_AFUNIX_H
 #include <afunix.h>
 #endif
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <tchar.h>
 #include <process.h>
-#undef _WIN32_WINNT
-/* For structs needed by GetAdaptersAddresses */
-#define _WIN32_WINNT 0x0501
 #include <iphlpapi.h>
 #include <netioapi.h>
 #endif
@@ -264,6 +267,7 @@ static int
 evutil_win_socketpair_afunix(int family, int type, int protocol,
     evutil_socket_t fd[2])
 {
+#undef ERR
 #define ERR(e) WSA##e
 	evutil_socket_t listener = -1;
 	evutil_socket_t connector = -1;
@@ -420,6 +424,7 @@ evutil_ersatz_socketpair_(int family, int type, int protocol,
 	 * for now, and really, when localhost is down sometimes, we
 	 * have other problems too.
 	 */
+#undef ERR
 #ifdef _WIN32
 #define ERR(e) WSA##e
 #else
@@ -1847,6 +1852,23 @@ evutil_set_evdns_getaddrinfo_cancel_fn_(evdns_getaddrinfo_cancel_fn fn)
 {
 	if (!evdns_getaddrinfo_cancel_impl)
 		evdns_getaddrinfo_cancel_impl = fn;
+}
+
+static const char *evutil_custom_resolvconf_filename = NULL;
+
+void
+evutil_set_resolvconf_filename_(const char *filename)
+{
+	evutil_custom_resolvconf_filename = filename;
+}
+
+const char *
+evutil_resolvconf_filename_(void)
+{
+	if (evutil_custom_resolvconf_filename)
+		return evutil_custom_resolvconf_filename;
+
+	return "/etc/resolv.conf";
 }
 
 /* Internal helper function: act like evdns_getaddrinfo if dns_base is set;
